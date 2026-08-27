@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOLOv11 Explorer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0b0e14;
+            --card: #161b22;
+            --card2: #1c2128;
+            --accent: #3fb950;
+            --accent-dim: rgba(63, 185, 80, 0.18);
+            --text: #f0f6fc;
+            --text-dim: #8b949e;
+            --danger: #f85149;
+            --warn: #d29922;
+            --border: #30363d;
+            --blue: #388bfd;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* ── HEADER ── */
+        header {
+            width: 100%;
+            padding: 0.9rem 1.5rem;
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            gap: 1rem;
+        }
+
+        .header-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .header-title span {
+            color: var(--accent);
+        }
+
+        .header-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        .badge {
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .badge-live {
+            background: var(--accent-dim);
+            color: var(--accent);
+            border: 1px solid var(--accent);
+        }
+
+        .badge-warn {
+            background: rgba(210, 153, 34, 0.15);
+            color: var(--warn);
+            border: 1px solid var(--warn);
+        }
+
+        .badge-loading {
+            background: rgba(56, 139, 253, 0.15);
+            color: var(--blue);
+            border: 1px solid var(--blue);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: .4
+            }
+        }
+
+        /* ── LAYOUT ── */
+        .main-container {
+            width: 95%;
+            max-width: 1100px;
+            padding: 1rem 0;
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 1rem;
+        }
+
+        @media (max-width: 860px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .view-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        /* ── VIDEO ── */
+        .video-container {
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            aspect-ratio: 4/3;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            position: relative;
+        }
+
+        .video-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .no-frame-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        /* ── CARDS ── */
+        .card {
+            background: var(--card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 1rem;
+        }
+
+        .card-title {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.8rem;
+        }
+
+        /* ── CONTROLS ── */
+        .control-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .control-label {
+            font-size: 0.78rem;
+            color: var(--text-dim);
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .control-label span {
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        input[type=range] {
+            width: 100%;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        select {
+            width: 100%;
+            background: var(--card2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.55rem 0.7rem;
+            border-radius: 7px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        select:focus {
+            outline: 2px solid var(--accent);
+            border-color: transparent;
+        }
+
+        .btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        button {
+            background: var(--card2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.6rem 0.5rem;
+            border-radius: 7px;
+            font-family: inherit;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        button:hover:not(:disabled) {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        button.btn-primary {
+            background: var(--accent);
+            color: #050b07;
+            border: none;
+        }
+
+        button.btn-primary:hover {
+            filter: brightness(1.1);
+            color: #050b07;
+        }
+
+        button.btn-danger {
+            background: var(--danger);
+            color: white;
+            border: none;
+        }
+
+        button.btn-danger:hover {
+            filter: brightness(1.12);
+            color: white;
+        }
+
+        button.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* ── WARNINGS ── */
+        .alert {
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            font-size: 0.82rem;
+            line-height: 1.5;
+            display: none;
+        }
+
+        .alert-warn {
+            background: rgba(210, 153, 34, 0.1);
+            border: 1px solid rgba(210, 153, 34, 0.4);
+            color: #e3b341;
+        }
+
+        .alert code {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-size: 0.78rem;
+        }
+
+        /* ── STATS PANEL ── */
+        .stats-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 0.6rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.82rem;
+        }
+
+        .stat-label {
+            color: var(--text-dim);
+        }
+
+        .stat-value {
+            font-weight: 700;
+            color: var(--accent);
+            font-size: 0.9rem;
+        }
+
+        /* ── DETECCIONES ── */
+        .detections-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .det-item {
+            background: var(--card2);
+            padding: 0.45rem 0.8rem;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.82rem;
+        }
+
+        .det-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .det-name {
+            flex: 1;
+        }
+
+        .det-count {
+            font-weight: 700;
+            color: var(--text-dim);
+        }
+
+        .det-conf {
+            font-size: 0.72rem;
+            background: var(--accent-dim);
+            color: var(--accent);
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .det-empty {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            text-align: center;
+            padding: 0.5rem;
+        }
+
+        /* ── ACORDEONES EDUCATIVOS ── */
+        .accordion {
+            border-top: 1px solid var(--border);
+        }
+
+        .accordion summary {
+            padding: 0.75rem 0;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+
+        .accordion summary:hover {
+            color: var(--text);
+        }
+
+        .accordion summary::after {
+            content: '›';
+            font-size: 1.1rem;
+            transition: transform 0.2s;
+        }
+
+        .accordion[open] summary::after {
+            transform: rotate(90deg);
+        }
+
+        .accordion-body {
+            padding: 0.5rem 0 1rem;
+            font-size: 0.82rem;
+            color: var(--text-dim);
+            line-height: 1.65;
+        }
+
+        .accordion-body p+p {
+            margin-top: 0.5rem;
+        }
+
+        .accordion-body b {
+            color: var(--text);
+        }
+
+        .coco-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.7rem;
+            margin-top: 0.5rem;
+        }
+
+        .coco-cat {
+            padding: 0.25rem 0.5rem;
+            background: var(--card2);
+            border-radius: 6px;
+        }
+
+        .coco-cat-title {
+            font-weight: 700;
+            color: var(--text);
+            font-size: 0.8rem;
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .coco-cat-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .coco-classes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.3rem;
+        }
+
+        .coco-tag {
+            background: var(--card2);
+            border: 1px solid var(--border);
+            padding: 1px 7px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            color: var(--text-dim);
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="header-title">YOLO<span>v11/v26</span> Explorer</div>
+        <div class="header-meta">
+            <span id="hdr-fps" title="Fotogramas procesados por segundo">— FPS</span>
+            <span id="hdr-model-badge" class="badge badge-live">nano</span>
+            <span id="hdr-loading-badge" class="badge badge-loading hidden">Cargando…</span>
+        </div>
+    </header>
+
+    <div class="main-container">
+
+        <!-- COLUMNA IZQUIERDA: VIDEO + CONTROLES -->
+        <div class="view-section">
+
+            <!-- Alerta de contexto no seguro -->
+            <div id="alert-insecure" class="alert alert-warn">
+                ⚠️ <b>HTTP detectado:</b> Los navegadores modernos bloquean el acceso a la cámara en URLs que no sean
+                HTTPS
+                o <code>localhost</code>. La cámara del servidor seguirá funcionando normalmente.<br>
+                Para usar <b>tu cámara del celular</b>, activa en Chrome:
+                <code>chrome://flags/#unsafely-treat-insecure-origin-as-secure</code>
+            </div>
+
+            <!-- Stream de video -->
+            <div class="video-container">
+                <img id="stream" src="{{ url_for('video_feed') }}" alt="Stream en vivo">
+                <div class="no-frame-overlay" id="no-frame-overlay" style="display:none;">
+                    <span style="font-size:2rem">📷</span>
+                    <span>Esperando frames…</span>
+                    <span style="font-size:0.75rem">Sin cámara conectada</span>
+                </div>
+            </div>
+
+            <!-- Controles -->
+            <div class="card">
+                <div class="card-title">Controles</div>
+
+                <div class="control-row">
+                    <div class="control-label">
+                        Modelo
+                        <span id="model-loading-text" class="hidden" style="color:var(--blue)">⏳ Cargando…</span>
+                    </div>
+                    <select id="model-select" onchange="changeModel()">
+                        <option value="yolo11n.pt">YOLOv11 Nano — Rápido (CPU)</option>
+                        <option value="yolo11n-seg.pt">YOLOv11 Nano 🚀 (Segmentación)</option>
+                        <option value="yolo11s.pt">YOLOv11 Small — Preciso</option>
+                        <option value="yolo11s-seg.pt">YOLOv11 Small 🚀 (Segmentación)</option>
+                        <option value="yolo26n.pt">YOLOv26 Nano — Rápido (CPU)</option>
+                        <option value="yolo26n-seg.pt">YOLOv26 Nano 🚀 (Segmentación)</option>
+                        <option value="yolo26s.pt">YOLOv26 Small — Preciso</option>
+                        <option value="yolo26s-seg.pt">YOLOv26 Small 🚀 (Segmentación)</option>
+                        <option value="yolo26x.pt">YOLOv26 XLarge — Súper Preciso</option>
+                        <option value="yolo26x-seg.pt">YOLOv26 XLarge 🚀 (Segmentación)</option>
+
+                    </select>
+                </div>
+
+                <div class="control-row">
+                    <div class="control-label">
+                        Confianza mínima
+                        <span id="conf-val">45%</span>
+                    </div>
+                    <input type="range" id="conf-slider" min="10" max="95" value="45" oninput="updateConfLabel()"
+                        onchange="updateConf()">
+                </div>
+
+                <div class="btn-grid">
+                    <button id="btn-claim" class="btn-primary" onclick="startClientCamera()">📷 Usar mi cámara</button>
+                    <button id="btn-release" class="btn-danger hidden" onclick="stopClientCamera()">⏹ Detener
+                        cámara</button>
+                    <button id="btn-server" onclick="forceSwitchToServer()" class="full-width">📡 Volver a cámara del
+                        servidor</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLUMNA DERECHA: STATS + EDU -->
+        <div class="stats-panel">
+
+            <!-- Stats en tiempo real -->
+            <div class="card">
+                <div class="card-title">Estado en tiempo real</div>
+
+                <div class="stat-row">
+                    <span class="stat-label">FPS (inferencia)</span>
+                    <span id="fps-val" class="stat-value">—</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Tiempo por frame</span>
+                    <span id="ms-val" class="stat-value">— ms</span>
+                </div>
+                <div class="stat-row" style="border:none; padding:0;">
+                    <span class="stat-label">Fuente de cámara</span>
+                    <span id="mode-val" class="stat-value">—</span>
+                </div>
+            </div>
+
+            <!-- Detecciones activas -->
+            <div class="card">
+                <div class="card-title">Detectado ahora</div>
+                <div class="detections-list" id="detection-list">
+                    <div class="det-empty">Sin detecciones</div>
+                </div>
+            </div>
+
+            <!-- Sección Educativa -->
+            <div class="card">
+                <div class="card-title">Conceptos</div>
+
+                <details class="accordion">
+                    <summary>¿Qué es la Segmentación?</summary>
+                    <div class="accordion-body">
+                        <p>La <b>Segmentación de Instancias</b> va un paso más allá de la detección. No solo ubica al
+                            objeto en una caja, sino que reconoce exactamente qué píxeles pertenecen a ese objeto.</p>
+                        <p>Esto permite al modelo "entender" la forma real del objeto, lo cual es vital para robótica,
+                            autos autónomos y edición de video en tiempo real.</p>
+                    </div>
+                </details>
+
+                <details class="accordion">
+                    <summary>¿Qué es YOLO?</summary>
+                    <div class="accordion-body">
+                        <p><b>YOLO</b> (You Only Look Once) es un algoritmo de detección de objetos que analiza el
+                            imagen entera de una sola pasada por la red neuronal.</p>
+                        <p>A diferencia de enfoques más lentos que proponen regiones candidatas, YOLO divide la imagen
+                            en una grilla y predice cajas y clases en paralelo, lo que lo hace extremadamente rápido.
+                        </p>
+                        <p><b>YOLOv11 Nano</b> tiene solo 2.6 millones de parámetros y puede correr a ~10 FPS en CPU,
+                            ideal para demos y dispositivos de baja potencia.</p>
+                    </div>
+                </details>
+
+                <details class="accordion">
+                    <summary>¿Qué son los Bounding Boxes?</summary>
+                    <div class="accordion-body">
+                        <p>Las <b>cajas delimitadoras</b> (bounding boxes) son rectángulos que encierran al objeto
+                            detectado.</p>
+                        <p>Cada caja está definida por cuatro números: coordenadas del esquina superior izquierda
+                            <b>(x1, y1)</b> y la esquina inferior derecha <b>(x2, y2)</b>.
+                        </p>
+                        <p>El porcentaje junto al nombre es la <b>confianza</b>: qué tan seguro está el modelo de que
+                            ese objeto es lo que dice que es.</p>
+                    </div>
+                </details>
+
+                <details class="accordion">
+                    <summary>Las 80 clases COCO</summary>
+                    <div class="accordion-body">
+                        <div class="coco-grid" id="coco-grid">
+                            <!-- Generado por JS -->
+                        </div>
+                    </div>
+                </details>
+            </div>
+        </div>
+    </div>
+
+    <!-- Video oculto para captura del cliente -->
+    <video id="client-video" autoplay playsinline muted style="width:0;height:0;position:absolute;opacity:0;"></video>
+
+    <script>
+        // ─── ESTADO LOCAL ───────────────────────────────────────
+        let myToken = null;
+        let isUploading = false;
+        const video = document.getElementById('client-video');
+        const canvas = document.createElement('canvas');
+
+        // Colores de categoría para los puntos de la lista (deben coincidir con app.py)
+        const CAT_COLORS = {
+            person: '#3fb950',
+            vehicle: '#f85149',
+            animal: '#ffcc66',
+            electronic: '#388bfd',
+            food: '#ff8c00',
+            furniture: '#a0a0a0',
+            sport: '#d966ff',
+            outdoor: '#00c8a0',
+            other: '#c0c0c0',
+        };
+
+        // Clases COCO para la sección educativa
+        const COCO_CATS = [
+            { name: 'Persona', color: CAT_COLORS.person, classes: ['person'] },
+            { name: 'Vehículos', color: CAT_COLORS.vehicle, classes: ['bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat'] },
+            { name: 'Animales', color: CAT_COLORS.animal, classes: ['bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe'] },
+            { name: 'Electrónica', color: CAT_COLORS.electronic, classes: ['tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'refrigerator'] },
+            { name: 'Alimentos', color: CAT_COLORS.food, classes: ['banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'wine glass', 'cup', 'bottle', 'fork', 'knife', 'spoon', 'bowl'] },
+            { name: 'Muebles', color: CAT_COLORS.furniture, classes: ['chair', 'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'sink'] },
+            { name: 'Deportes', color: CAT_COLORS.sport, classes: ['frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket'] },
+            { name: 'Exteriores', color: CAT_COLORS.outdoor, classes: ['traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench'] },
+            { name: 'Accesorios / Otros', color: CAT_COLORS.other, classes: ['backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'] },
+        ];
+
+        // ─── INICIALIZACIÓN ──────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCocoCats();
+            if (!window.isSecureContext && window.location.hostname !== 'localhost') {
+                document.getElementById('alert-insecure').style.display = 'block';
+            }
+            setInterval(fetchStats, 1000);
+        });
+
+        // ─── SECCIÓN EDUCATIVA ───────────────────────────────────
+        function renderCocoCats() {
+            const grid = document.getElementById('coco-grid');
+            COCO_CATS.forEach(cat => {
+                const div = document.createElement('div');
+                div.className = 'coco-cat';
+                div.innerHTML = `
+            <div class="coco-cat-title">
+                <span class="coco-cat-dot" style="background:${cat.color}"></span>
+                ${cat.name}
+            </div>
+            <div class="coco-classes">
+                ${cat.classes.map(c => `<span class="coco-tag">${c}</span>`).join('')}
+            </div>
+        `;
+                grid.appendChild(div);
+            });
+        }
+
+        // ─── POLLING DE STATS ────────────────────────────────────
+        async function fetchStats() {
+            try {
+                const res = await fetch('/stats');
+                const data = await res.json();
+
+                // FPS y latencia
+                document.getElementById('fps-val').textContent = data.fps ? `${data.fps}` : '—';
+                document.getElementById('ms-val').textContent = data.inference_ms ? `${data.inference_ms} ms` : '— ms';
+                document.getElementById('hdr-fps').textContent = `${data.fps || 0} FPS`;
+
+                // Modo de cámara
+                document.getElementById('mode-val').textContent = data.camera_mode === 'server' ? 'Servidor' : 'Cliente';
+
+                // Modelo activo (sincronizar dropdown)
+                const sel = document.getElementById('model-select');
+                if (!data.model_loading && sel.value !== data.model) {
+                    sel.value = data.model;
+                }
+
+                // Estado de carga del modelo
+                const loadingBadge = document.getElementById('hdr-loading-badge');
+                const modelLoadingText = document.getElementById('model-loading-text');
+                const modelBadge = document.getElementById('hdr-model-badge');
+                if (data.model_loading) {
+                    loadingBadge.classList.remove('hidden');
+                    modelLoadingText.classList.remove('hidden');
+                    sel.disabled = true;
+                    modelBadge.textContent = '…';
+                } else {
+                    loadingBadge.classList.add('hidden');
+                    modelLoadingText.classList.add('hidden');
+                    sel.disabled = false;
+                    modelBadge.textContent = data.model.replace('yolo', '').replace('.pt', '');
+                }
+
+                // Overlay "sin frames"
+                document.getElementById('no-frame-overlay').style.display = data.has_frame ? 'none' : 'flex';
+
+                // Detecciones
+                renderDetections(data.detections);
+
+                // Botón "Usar mi cámara" — bloqueado si alguien más lo usa
+                const btnClaim = document.getElementById('btn-claim');
+                if (data.client_locked && !myToken) {
+                    btnClaim.disabled = true;
+                    btnClaim.textContent = '🔒 Cámara ocupada';
+                } else if (!myToken) {
+                    btnClaim.disabled = false;
+                    btnClaim.textContent = '📷 Usar mi cámara';
+                }
+
+            } catch (e) { /* servidor no disponible */ }
+        }
+
+        function renderDetections(detections) {
+            const list = document.getElementById('detection-list');
+
+            if (!detections || detections.length === 0) {
+                list.innerHTML = '<div class="det-empty">Sin detecciones</div>';
+                return;
+            }
+
+            // Agrupar por clase, sumar confianza promedio
+            const grouped = {};
+            detections.forEach(d => {
+                if (!grouped[d.class]) grouped[d.class] = { count: 0, conf_sum: 0, cat: d.category || 'other' };
+                grouped[d.class].count++;
+                grouped[d.class].conf_sum += d.conf;
+            });
+
+            // Ordenar por cantidad desc
+            const sorted = Object.entries(grouped).sort((a, b) => b[1].count - a[1].count);
+
+            list.innerHTML = sorted.map(([name, info]) => {
+                const avgConf = Math.round((info.conf_sum / info.count) * 100);
+                const color = CAT_COLORS[info.cat] || CAT_COLORS.other;
+                return `
+            <div class="det-item">
+                <span class="det-dot" style="background:${color}"></span>
+                <span class="det-name">${name}</span>
+                <span class="det-count">×${info.count}</span>
+                <span class="det-conf">${avgConf}%</span>
+            </div>
+        `;
+            }).join('');
+        }
+
+        // ─── CONFIGURACIÓN ───────────────────────────────────────
+        function updateConfLabel() {
+            document.getElementById('conf-val').textContent = document.getElementById('conf-slider').value + '%';
+        }
+
+        async function updateConf() {
+            const conf = document.getElementById('conf-slider').value / 100;
+            await fetch('/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ conf_threshold: conf })
+            });
+        }
+
+        async function changeModel() {
+            const model = document.getElementById('model-select').value;
+            await fetch('/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ model })
+            });
+        }
+
+        // ─── CÁMARA DEL CLIENTE ──────────────────────────────────
+        async function startClientCamera() {
+            // FIX #4: Pedimos permiso de cámara ANTES de reclamar el token.
+            // Si el usuario cancela, el token no queda huérfano en el servidor.
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                alert('❌ Tu navegador bloquea el acceso a la cámara (contexto HTTP).\n\nSolución en Chrome:\nEscribí en la barra: chrome://flags/#unsafely-treat-insecure-origin-as-secure\nAgregá la IP de este servidor y reiniciá Chrome.');
+                return;
+            }
+
+            let stream;
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment', width: { ideal: 640 } }
+                });
+            } catch (e) {
+                alert('❌ No se pudo acceder a la cámara.\nAsegurate de dar permiso cuando el navegador te lo pida.');
+                console.error(e);
+                return;
+            }
+
+            // Ahora sí — reclamar el token
+            const res = await fetch('/claim_camera', { method: 'POST' });
+            if (res.status === 409) {
+                stream.getTracks().forEach(t => t.stop()); // liberar cámara local
+                alert('Alguien más ya está usando su cámara. Esperá que la libere.');
+                return;
+            }
+            const data = await res.json();
+            myToken = data.token;
+
+            video.srcObject = stream;
+
+            document.getElementById('btn-claim').classList.add('hidden');
+            document.getElementById('btn-release').classList.remove('hidden');
+
+            // FIX #2: Loop auto-regulado — espera que el fetch termine antes del siguiente frame
+            cameraLoop();
+        }
+
+        async function cameraLoop() {
+            if (!myToken) return;
+
+            if (video.videoWidth > 0) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+
+                await new Promise(resolve => {
+                    canvas.toBlob(async blob => {
+                        try {
+                            await fetch('/upload_frame', {
+                                method: 'POST',
+                                headers: { 'X-Camera-Token': myToken },
+                                body: blob
+                            });
+                        } catch (e) { }
+                        resolve();
+                    }, 'image/jpeg', 0.65);
+                });
+            }
+
+            // Esperar un mínimo de 80ms entre frames (~12 FPS upload max)
+            await new Promise(r => setTimeout(r, 80));
+            cameraLoop();
+        }
+
+        async function stopClientCamera() {
+            const tokenToRelease = myToken;
+            myToken = null; // parar el loop primero
+
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(t => t.stop());
+                video.srcObject = null;
+            }
+
+            if (tokenToRelease) {
+                await fetch('/release_camera', {
+                    method: 'POST',
+                    headers: { 'X-Camera-Token': tokenToRelease }
+                });
+            }
+
+            document.getElementById('btn-claim').classList.remove('hidden');
+            document.getElementById('btn-release').classList.add('hidden');
+        }
+
+        async function forceSwitchToServer() {
+            if (myToken) await stopClientCamera();
+            // El servidor cambia automáticamente al recibir /release_camera
+        }
+    </script>
+</body>
+
+</html>
